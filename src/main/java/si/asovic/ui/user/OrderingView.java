@@ -14,7 +14,6 @@ import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.VaadinSession;
 import si.asovic.RootLayout;
 import si.asovic.backend.data.entity.BottleEntity;
 import si.asovic.backend.data.entity.FlavourEntity;
@@ -118,6 +117,7 @@ public class OrderingView extends VerticalLayout {
             }
         });
         nicBox.setItems(getComboboxValuesNic());
+        nicBox.setValue("3mg");
         nicBox.setAllowCustomValue(false);
         nicBox.setLabel("Nicotine (mg/ml)");
         amountField.setHasControls(true);
@@ -212,46 +212,4 @@ public class OrderingView extends VerticalLayout {
         Notification.show("Order successful. Thank you.", 5000, Notification.Position.MIDDLE);
     }
 
-    //    private void configureGrid() {
-//        grid.addClassName("flavours");
-//        grid.setColumns("flavour");
-//        grid.setItems(flavourRepository.getFlavours());
-//        grid.addComponentColumn(flavoursGrid -> {
-//            ComboBox<String> nicBox = new ComboBox<>();
-//            nicBox.setItems(getComboboxValuesNic());
-//            nicBox.setAllowCustomValue(false);
-//            nicBox.addValueChangeListener(comboBoxStringComponentValueChangeEvent -> {
-//                if (comboBoxStringComponentValueChangeEvent.getValue() != null) {
-//                    nicotineSelected = comboBoxStringComponentValueChangeEvent.getValue();
-//                    System.out.println(nicotineSelected);
-//                }
-//            });
-//            return nicBox;
-//        }).setHeader("Nicotine").setResizable(true).setKey("nicotine");
-//        grid.addComponentColumn(flavoursGrid -> {
-//            ComboBox<Integer> amountBox = new ComboBox<>();
-//            amountBox.setItems(getComboboxValuesAmount());
-//            amountBox.setAllowCustomValue(false);
-//            amountBox.addValueChangeListener(comboBoxIntegerComponentValueChangeEvent -> {
-//                if (comboBoxIntegerComponentValueChangeEvent.getValue() != null) {
-//                    amountSelected = comboBoxIntegerComponentValueChangeEvent.getValue();
-//                    System.out.println(amountSelected);
-//                }
-//            });
-//            return amountBox;
-//        }).setHeader("Amount").setResizable(true).setKey("amount");
-//        grid.addComponentColumn(flavourEntity -> {
-//            Button addButton = new Button("Add");
-//            addButton.addClickListener(buttonClickEvent -> {
-//                grid.select(flavourEntity);
-//                addToCart(grid.getSelectedItems());
-//            });
-//            return addButton;
-//        });
-//        grid.setSizeFull();
-//        grid.getColumns().forEach(flavourEntityColumn -> flavourEntityColumn.setAutoWidth(true));
-//
-//        cartGrid.addClassName("cart-grid");
-//        cartGrid.setColumns("flavour", "nic", "amount");
-//    }
 }

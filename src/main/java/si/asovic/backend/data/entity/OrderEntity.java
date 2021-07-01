@@ -3,66 +3,54 @@
 
 package si.asovic.backend.data.entity;
 
-import com.fasterxml.jackson.annotation.*;
+
+import si.asovic.backend.service.NewOrderListener;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-"bottle"
-})
-
-//@EntityListeners(NewOrderListener.class)
+@EntityListeners(NewOrderListener.class)
 @Entity(name="purchases")
 @Table(name="purchases")
-public class OrderEntity implements Serializable{
+public class OrderEntity implements Serializable {
     
 	private static final long serialVersionUID = 8994124296617397940L;
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+	private String username;
+	@Column(name="status", columnDefinition="int default 0")
+	private int status;
+	@Column(columnDefinition="date")
+	private LocalDate order_date;
+	private String comment;
+	@OneToMany(cascade=CascadeType.ALL, fetch = FetchType.EAGER)
+	@JoinColumn(name="orderid")
+	private List<BottleEntity> bottle;
+
 	public Long getId() {
 		return id;
 	}
-
 	public void setId(Long id) {
 		this.id = id;
 	}
-	
-	@Column(name="username")
-	private String username;
 
 	public String getUsername() {
 		return username;
 	}
-
 	public void setUsername(String username) {
 		this.username = username;
 	}
-	
-	@Column(name="status", columnDefinition="int default 0")
-	private int status;
-	
-	@Column(columnDefinition="date")
-	private LocalDate order_date;
 
 	public LocalDate getOrder_date() {
 		return order_date;
 	}
-
 	public void setOrder_date(LocalDate order_date) {
 		this.order_date = order_date;
 	}
-
-	@Column(name = "comment")
-	private String comment;
 
 	public String getComment() {
 		return comment;
@@ -71,41 +59,29 @@ public class OrderEntity implements Serializable{
 		this.comment = comment;
 	}
 
-	@OneToMany(cascade=CascadeType.ALL, orphanRemoval = true)
-	@JoinColumn(name="orderid")
-    @JsonProperty("bottle")
-    private List<BottleEntity> bottle;
-
-	@Transient
-    @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
-
-    @JsonProperty("bottle")
     public List<BottleEntity> getBottle() {
     	return bottle;
     }
-
-    @JsonProperty("bottle")
     public void setBottle(List<BottleEntity> bottle) {
     	this.bottle = bottle;
-    }
-
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-    	return this.additionalProperties;
-    }
-
-    @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
-    	this.additionalProperties.put(name, value);
     }
 
 	public int getStatus() {
 		return status;
 	}
-
 	public void setStatus(int status) {
 		this.status = status;
 	}
 
+	@Override
+	public String toString() {
+		return "OrderEntity{" +
+				"id=" + id +
+				", username='" + username + '\'' +
+				", status=" + status +
+				", order_date=" + order_date +
+				", comment='" + comment + '\'' +
+				", bottle=" + bottle +
+				'}';
+	}
 }

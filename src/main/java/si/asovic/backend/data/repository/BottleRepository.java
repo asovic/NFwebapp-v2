@@ -1,5 +1,6 @@
 package si.asovic.backend.data.repository;
 
+import org.springframework.cglib.proxy.LazyLoader;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import si.asovic.NFConfig;
@@ -8,7 +9,7 @@ import si.asovic.backend.data.entity.FlavourEntity;
 
 import java.util.List;
 
-public interface BottleRepository extends JpaRepository<BottleEntity, Long>{
+public interface BottleRepository extends JpaRepository<BottleEntity, Long> {
 
     List<BottleEntity> findByOrderid(Long orderid);
 	

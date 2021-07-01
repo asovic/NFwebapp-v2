@@ -31,4 +31,10 @@ public final class SecurityUtils {
     public static String getUsername() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
+
+    public static boolean isRoleUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getAuthorities().stream()
+                .anyMatch(r -> r.getAuthority().equals("ROLE_USER"));
+    }
 }

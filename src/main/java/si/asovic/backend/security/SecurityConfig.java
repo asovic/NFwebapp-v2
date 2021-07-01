@@ -3,24 +3,16 @@ package si.asovic.backend.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import si.asovic.backend.data.entity.RoleEntity;
-import si.asovic.backend.data.entity.UserEntity;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import si.asovic.backend.data.repository.UserRepository;
 
-import java.util.HashSet;
-import java.util.Set;
+import javax.sql.DataSource;
 
 @EnableWebSecurity
 @Configuration
@@ -33,46 +25,48 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private DataSource dataSource;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable()
                 .requestCache().requestCache(new CustomRequestCache())
-                .and().authorizeRequests().requestMatchers(SecurityUtils::isFrameworkInternalRequest).permitAll()
+                .and().authorizeRequests()
+                .antMatchers("/unfilled/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers("/userManagement/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers("/allorders/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers("/allorders/**").access("hasRole('ROLE_ADMIN')")
+                .requestMatchers(SecurityUtils::isFrameworkInternalRequest).permitAll()
                 .anyRequest().authenticated()
-                .and().formLogin().loginPage(LOGIN_URL).permitAll()
+                .and().formLogin().successHandler(myAuthenticationSuccessHandler())
+                .loginPage(LOGIN_URL).permitAll()
                 .loginProcessingUrl(LOGIN_PROCESSING_URL)
                 .failureUrl(LOGIN_FAILURE_URL)
                 .and().logout().logoutSuccessUrl(LOGOUT_SUCCESS_URL);
     }
 
-//    @Bean
-//    @Override
-//    protected UserDetailsService userDetailsService(String username) {
-//        UserEntity userEntity = userRepository.findByUsername(username);
-//        if (userEntity == null) throw new UsernameNotFoundException(username);
-//        Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-//        for (RoleEntity role : userEntity.getRole()){
-//            grantedAuthorities.add(new SimpleGrantedAuthority(role.getName()));
-//        }
-//        return new User(userEntity.getUsername(), userEntity.getPassword(), grantedAuthorities);
-//    }
-
-    @Bean
     @Override
-    public UserDetailsService userDetailsService() {
-        UserDetails user =
-                User.withUsername("a")
-                        .password("{noop}a")
-                        .roles("USER")
-                        .build();
-        return new InMemoryUserDetailsManager(user);
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.jdbcAuthentication()
+                .dataSource(dataSource)
+                .rolePrefix("ROLE_")
+                .usersByUsernameQuery(
+                        "SELECT username, password, enabled FROM nf_user WHERE username=?")
+                .authoritiesByUsernameQuery(
+                        "select u.username, r.role_name from nfdev.nf_user as u inner join nfdev.users_roles as ur ON user_id = u.id inner join nfdev.role as r on r.id = ur.role_id where u.username = ?")
+                .passwordEncoder(new BCryptPasswordEncoder());
     }
 
-//    @Bean
-//    public BCryptPasswordEncoder bCryptPasswordEncoder() {
-//        return new BCryptPasswordEncoder();
-//    }
+    @Bean
+    public BCryptPasswordEncoder bCryptPasswordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationSuccessHandler myAuthenticationSuccessHandler(){
+        return new CustomUrlAuthenticationSuccessHandler();
+    }
 
     @Override
     public void configure(WebSecurity web) {

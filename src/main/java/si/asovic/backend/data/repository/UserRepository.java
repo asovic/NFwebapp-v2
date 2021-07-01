@@ -4,5 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import si.asovic.backend.data.entity.UserEntity;
 
 public interface UserRepository extends JpaRepository<UserEntity, String>{
-//	UserEntity findByUsername(String username);
+	UserEntity findByUsername(String username);
 }

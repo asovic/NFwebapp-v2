@@ -1,6 +1,7 @@
 package si.asovic.ui.user;
 
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -30,10 +31,13 @@ public class HistoryView extends VerticalLayout {
                        BottleRepository bottleRepository) {
         this.orderRepository = orderRepository;
         this.bottleRepository = bottleRepository;
-        orderDetailForm = new OrderDetailForm(bottleRepository);
+        addClassName("order-history");
+        orderDetailForm = new OrderDetailForm(orderRepository);
+        orderDetailForm.setVisible(false);
         setSizeFull();
         Div div = new Div(grid, orderDetailForm);
         div.setSizeFull();
+        div.addClassName("content");
         add(div);
         configureGrid();
         populateGrid();
@@ -47,9 +51,7 @@ public class HistoryView extends VerticalLayout {
                 viewOrderDetail(gridHistoryOrderComponentValueChangeEvent.getValue()));
     }
 
-
-
-    private void populateGrid() {
+    public void populateGrid() {
         String username = SecurityUtils.getUsername();
         List<HistoryOrder> historyOrders = new ArrayList<>();
         List<OrderEntity> orderEntities = orderRepository.findByUsername(username);
@@ -58,6 +60,7 @@ public class HistoryView extends VerticalLayout {
             historyOrder.setDate(orderEntity.getOrder_date());
             historyOrder.setComment(orderEntity.getComment());
             Long orderId = orderEntity.getId();
+            historyOrder.setId(orderId);
             historyOrder.setBottles(bottleRepository.findByOrderid(orderId).size());
             historyOrder.setStatus(orderEntity.getStatus() == 0 ? "In progress" : "Completed");
             historyOrders.add(historyOrder);
@@ -66,6 +69,7 @@ public class HistoryView extends VerticalLayout {
     }
 
     private void viewOrderDetail(HistoryOrder value) {
+        orderDetailForm.setOrder(orderRepository.getLazyLoaded(value.getId()));
         orderDetailForm.setVisible(true);
     }
 }

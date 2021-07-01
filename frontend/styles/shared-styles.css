@@ -18,3 +18,16 @@ a[highlight] {
 .order-detail .order-detail-grid {
     flex: 2;}
 }
+
+.order-history .content {
+    display: flex;
+}
+
+.order-history .history-grid {
+    flex: 2;
+}
+
+.order-history .history-order-detail {
+    flex: 1;
+    padding: var(--lumo-space-m);
+}
