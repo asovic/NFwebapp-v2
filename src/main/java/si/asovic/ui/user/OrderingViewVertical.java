@@ -4,12 +4,11 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.PageTitle;
@@ -26,53 +25,106 @@ import si.asovic.backend.security.SecurityUtils;
 import si.asovic.backend.service.FlavourService;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @CssImport("./styles/shared-styles.css")
-@Route(value = "order", layout = RootLayout.class)
+@Route(value = "m_order", layout = RootLayout.class)
 @PageTitle("Naročilo | NF")
-public class OrderingView extends VerticalLayout {
+public class OrderingViewVertical extends VerticalLayout {
 
     private FlavourService flavourRepository;
     private CartRepository cartRepository;
     private OrderRepository orderRepository;
 
-    private SplitLayout splitLayout = new SplitLayout();
     private Grid<ShoppingCartItem> cartGrid = new Grid<>(ShoppingCartItem.class);
-    private FormLayout formLayout = new FormLayout();
-    VerticalLayout layoutForButtons = new VerticalLayout();
-    Div div = new Div();
+    private VerticalLayout layoutForButtons = new VerticalLayout();
+    private VerticalLayout verticalLayout = new VerticalLayout();
     Button orderButton = new Button("Order");
     Button resetButton = new Button("Reset");
     TextArea opombe = new TextArea("Order notes...");
     TextArea summary = new TextArea("Total bottles: ");
     List<ShoppingCartItem> shoppingCartItems;
-    private static final List<String> nicotineValues =
-            Arrays.asList("0mg", "1mg", "2mg", "3mg", "4mg", "5mg", "6mg", "7mg", "8mg", "9mg", "10mg", "11mg", "12mg", "13mg", "14mg", "15mg");
 
-    public OrderingView(FlavourService flavourRepository,
-                        CartRepository cartRepository,
-                        OrderRepository orderRepository) {
+    public OrderingViewVertical(FlavourService flavourRepository,
+                                CartRepository cartRepository,
+                                OrderRepository orderRepository) {
         this.flavourRepository = flavourRepository;
         this.cartRepository = cartRepository;
         this.orderRepository = orderRepository;
-        shoppingCartItems = new ArrayList<>();
         addClassName("order");
         setSizeFull();
-        opombe.setPlaceholder("Write here...");
+        verticalLayout.setAlignItems(Alignment.CENTER);
+        verticalLayout.add(generateFlavour(), new Span(), generateCart());
+        add(verticalLayout);
+        configureButtons();
+        populateCartFromHistory();
+    }
+
+    private VerticalLayout generateFlavour() {
+        VerticalLayout orderingLayout = new VerticalLayout();
+        List<FlavourEntity> flavourEntities = flavourRepository.getFlavours();
+        List<String> flavours = new ArrayList<>();
+        flavourEntities.forEach(flavourEntity -> flavours.add(flavourEntity.getFlavour()));
+        ComboBox<String> flavourBox = new ComboBox<>();
+        flavours.sort(String::compareTo);
+        flavourBox.setItems(flavours);
+        flavourBox.setAllowCustomValue(false);
+        flavourBox.setLabel("Flavour");
+        flavourBox.setRequired(true);
+        ComboBox<String> nicBox = new ComboBox<>();
+        NumberField amountField = new NumberField();
+        Button addButton = new Button("Add to cart");
+        addButton.addClickListener(buttonClickEvent -> {
+            if (flavourBox.isEmpty() || nicBox.isEmpty() || amountField.getValue() == 0) {
+                Notification.show("Invalid order, please check your selection.", 5000, Notification.Position.BOTTOM_CENTER);
+            } else {
+                ShoppingCartItem cartItem = new ShoppingCartItem();
+                cartItem.setFlavour(flavourBox.getValue());
+                cartItem.setNic(nicBox.getValue());
+                cartItem.setAmount(amountField.getValue() == null ? 1 : amountField.getValue().intValue());
+                addToCart(cartItem);
+            }
+        });
+        nicBox.setItems(getComboboxValuesNic());
+        nicBox.setValue("3mg");
+        nicBox.setAllowCustomValue(false);
+        nicBox.setLabel("Nicotine (mg/ml)");
+        amountField.setHasControls(true);
+        amountField.setStep(1);
+        amountField.setMax(15);
+        amountField.setMin(1);
+        amountField.setLabel("# of bottles");
+        amountField.setValue(1d);
+        orderingLayout.add(flavourBox, nicBox, amountField, addButton);
+        orderingLayout.setAlignItems(Alignment.CENTER);
+        return orderingLayout;
+    }
+
+    private Collection<String> getComboboxValuesNic() {
+        return Arrays.asList("0mg", "1mg", "2mg", "3mg", "4mg", "5mg", "6mg", "7mg", "8mg", "9mg", "10mg", "11mg", "12mg", "13mg", "14mg", "15mg");
+    }
+
+    private void configureButtons() {
+        orderButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        resetButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        resetButton.addClickListener(buttonClickEvent -> clearCart());
+        orderButton.addClickListener(buttonClickEvent -> saveOrder());
+    }
+
+    private VerticalLayout generateCart() {
+        Div buttonsAndOpombeDiv = new Div();
+        buttonsAndOpombeDiv.setSizeFull();
+        VerticalLayout cartLayout = new VerticalLayout();
+        shoppingCartItems = new ArrayList<>();
+        opombe.setPlaceholder("");
         opombe.setWidthFull();
-        splitLayout.setSplitterPosition(60);
-        splitLayout.addToPrimary(formLayout);
         summary.setValue(String.valueOf(shoppingCartItems.size()));
         summary.setReadOnly(true);
-        splitLayout.addToSecondary(cartGrid, summary, div);
-        splitLayout.setSizeFull();
         layoutForButtons.setWidth(null);
         layoutForButtons.setAlignItems(Alignment.CENTER);
         layoutForButtons.add(orderButton, resetButton);
         cartGrid.setColumns("flavour", "nic", "amount");
+        cartGrid.setWidth("400p");
         cartGrid.addComponentColumn(shoppingCartItem -> {
             Button remove = new Button("X");
             remove.addThemeVariants(ButtonVariant.LUMO_ERROR);
@@ -82,64 +134,9 @@ public class OrderingView extends VerticalLayout {
             });
             return remove;
         });
-        div.add(opombe, layoutForButtons);
-        div.setSizeFull();
-        div.addClassName("buttons");
-        add(splitLayout);
-        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.TOP),
-                new FormLayout.ResponsiveStep("600px", 1, FormLayout.ResponsiveStep.LabelsPosition.ASIDE));
-        formLayout.add(generateFlavour(), 1);
-        configureButtons();
-        populateCartFromHistory();
-    }
-
-    private FormLayout generateFlavour() {
-        List<FlavourEntity> flavourEntities = flavourRepository.getFlavours();
-        List<String> flavours = new ArrayList<>();
-        flavourEntities.forEach(flavourEntity -> flavours.add(flavourEntity.getFlavour()));
-
-        FormLayout formLayout = new FormLayout();
-        ComboBox<String> flavourBox = new ComboBox<>();
-        flavourBox.setItems(flavours);
-        flavourBox.setAllowCustomValue(false);
-        flavourBox.setLabel("Flavour");
-        ComboBox<String> nicBox = new ComboBox<>();
-        NumberField amountField = new NumberField();
-        Button addButton = new Button("Add to cart");
-        addButton.addClickListener(buttonClickEvent -> {
-            if (flavourBox.isEmpty() || nicBox.isEmpty()) {
-                Notification.show("Flavour and nicotine must be selected", 5000, Notification.Position.BOTTOM_CENTER);
-            } else {
-                ShoppingCartItem cartItem = new ShoppingCartItem();
-                cartItem.setFlavour(flavourBox.getValue());
-                cartItem.setNic(nicBox.getValue());
-                cartItem.setAmount(amountField.getValue() == null ? 1 : amountField.getValue().intValue());
-                addToCart(cartItem);
-            }
-        });
-        nicBox.setItems(nicotineValues);
-        nicBox.setValue("3mg");
-        nicBox.setAllowCustomValue(false);
-        nicBox.setLabel("Nicotine (mg/ml)");
-        amountField.setHasControls(true);
-        amountField.setStep(1);
-        amountField.setMax(15);
-        amountField.setLabel("# of bottles (empty is one)");
-        formLayout.add(flavourBox, nicBox, amountField, addButton);
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("25em", 1),
-                new FormLayout.ResponsiveStep("25em", 2),
-                new FormLayout.ResponsiveStep("25em", 3),
-                new FormLayout.ResponsiveStep("25em", 4));
-
-        return formLayout;
-    }
-
-    private void configureButtons() {
-        orderButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        resetButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-        resetButton.addClickListener(buttonClickEvent -> clearCart());
-        orderButton.addClickListener(buttonClickEvent -> saveOrder());
+        buttonsAndOpombeDiv.add(opombe, layoutForButtons);
+        cartLayout.add(cartGrid, summary, buttonsAndOpombeDiv);
+        return cartLayout;
     }
 
     private void addToCart(ShoppingCartItem selectedItems) {
@@ -204,5 +201,4 @@ public class OrderingView extends VerticalLayout {
         clearCart();
         Notification.show("Order successful. Thank you.", 5000, Notification.Position.MIDDLE);
     }
-
 }

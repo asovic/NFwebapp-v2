@@ -23,7 +23,7 @@ public class OrderDetailForm extends VerticalLayout {
         this.orderRepository = orderRepository;
         grid.setColumns("aroma", "nic");
         grid.setClassName("order-detail-grid");
-        grid.setHeight("auto");
+        grid.setSizeFull();
         add(grid, deleteButton, reorderButton);
         reorderButton.addClickListener(buttonClickEvent -> reorder());
         deleteButton.setVisible(false);

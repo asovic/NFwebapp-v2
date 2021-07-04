@@ -20,7 +20,6 @@ public class UnfinishedOrderDetail extends VerticalLayout {
         this.orderRepository = orderRepository;
         grid.setColumns("aroma", "nic");
         grid.setClassName("order-detail-grid");
-        grid.setHeight("auto");
         add(grid, finishButton);
         if (entity.getStatus() == 1) {
             finishButton.setVisible(false);
