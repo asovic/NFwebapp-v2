@@ -21,9 +21,6 @@ public class UnfinishedOrderDetail extends VerticalLayout {
         grid.setColumns("aroma", "nic");
         grid.setClassName("order-detail-grid");
         add(grid, finishButton);
-        if (entity.getStatus() == 1) {
-            finishButton.setVisible(false);
-        }
         finishButton.addClickListener(buttonClickEvent -> markAsFinished(entity.getId()));
         finishButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
         addClassName("history-order-detail");
@@ -32,6 +29,9 @@ public class UnfinishedOrderDetail extends VerticalLayout {
     public void setOrder(OrderEntity order) {
         this.entity = order;
         grid.setItems(order.getBottle());
+        if (entity.getStatus() == 1) {
+            finishButton.setVisible(false);
+        }
         expand(grid);
     }
 

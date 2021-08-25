@@ -11,6 +11,8 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.HighlightConditions;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.VaadinSession;
+import si.asovic.backend.data.entity.UserLoginsEntity;
+import si.asovic.backend.data.repository.UserLoginsRepository;
 import si.asovic.backend.security.SecurityUtils;
 import si.asovic.ui.LoginView;
 import si.asovic.ui.admin.FlavorManageView;
@@ -21,10 +23,17 @@ import si.asovic.ui.user.HistoryView;
 import si.asovic.ui.user.OrderingView;
 import si.asovic.ui.user.OrderingViewVertical;
 
+import java.sql.Date;
+import java.time.Instant;
+
 @CssImport("./styles/shared-styles.css")
 public class RootLayout extends AppLayout {
 
-    public RootLayout() {
+    private UserLoginsRepository userLoginsRepository;
+
+    public RootLayout(UserLoginsRepository userLoginsRepository) {
+        this.userLoginsRepository = userLoginsRepository;
+        logUserLogin();
         if (SecurityUtils.isRoleUser()) {
             createUserDrawer();
         } else {
@@ -69,5 +78,12 @@ public class RootLayout extends AppLayout {
         unfilled.setHighlightCondition(HighlightConditions.sameLocation());
         users.setHighlightCondition(HighlightConditions.sameLocation());
         addToDrawer(new VerticalLayout(unfilled, flavorManage, orders, users));
+    }
+
+    private void logUserLogin() {
+        UserLoginsEntity entity = new UserLoginsEntity();
+        entity.setUsername(SecurityUtils.getUsername());
+        entity.setLogin(Date.from(Instant.now()));
+        userLoginsRepository.save(entity);
     }
 }
