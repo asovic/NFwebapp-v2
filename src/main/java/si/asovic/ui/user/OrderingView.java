@@ -28,6 +28,7 @@ import si.asovic.backend.service.FlavourService;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @CssImport("./styles/shared-styles.css")
@@ -97,7 +98,7 @@ public class OrderingView extends VerticalLayout {
         List<FlavourEntity> flavourEntities = flavourRepository.getFlavours();
         List<String> flavours = new ArrayList<>();
         flavourEntities.forEach(flavourEntity -> flavours.add(flavourEntity.getFlavour()));
-
+        Collections.sort(flavours);
         FormLayout formLayout = new FormLayout();
         ComboBox<String> flavourBox = new ComboBox<>();
         flavourBox.setItems(flavours);
